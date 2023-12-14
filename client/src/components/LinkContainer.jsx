@@ -1,27 +1,43 @@
-// LinkContainer.jsx
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import Table from "./Table";
 import Form from "./Form";
 
 function LinkContainer() {
-  // Step 8: Create a state object to hold an array called favLinks
   const [favLinks, setFavLinks] = useState([]);
 
-  // Step 9: Create a removeLink function that updates the state and removes an item from favLinks
-  const removeLink = (index) => {
-    const updatedLinks = [...favLinks];
-    updatedLinks.splice(index, 1);
+  useEffect(() => {
+    // Fetch data from the server when the component mounts
+    fetch("http://localhost:3000/api/links")
+      .then((response) => response.json())
+      .then((data) => setFavLinks(data))
+      .catch((error) => console.error("Error fetching data:", error));
+  }, []); 
+
+  const removeLink = (id) => {
+    const updatedLinks = favLinks.filter((link) => link.id !== id);
     setFavLinks(updatedLinks);
+
+    // Send a DELETE request to the server
+    fetch(`http://localhost:3000/api/links/${id}`, {
+      method: "DELETE",
+    })
+      .then((response) => response.json())
+      .then((data) => console.log("Link deleted:", data))
+      .catch((error) => console.error("Error deleting link:", error));
   };
 
-  // Step 11: Create a function called handleSubmit to update the state of favLinks and add a new favLink from Form
   const handleSubmit = (favLink) => {
-    setFavLinks([...favLinks, favLink]);
-  };
-
-  // Step 13: Create a method called submitForm that calls handleSubmit, passes the Form data, and resets the state of the Form values
-  const submitForm = (formData) => {
-    handleSubmit(formData);
+    // Send a POST request to the server to add a new link
+    fetch("http://localhost:3000/api/links", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(favLink),
+    })
+      .then((response) => response.json())
+      .then((data) => setFavLinks([...favLinks, data]))
+      .catch((error) => console.error("Error adding link:", error));
   };
 
   return (
@@ -29,11 +45,9 @@ function LinkContainer() {
       <h1>My Favorite Links</h1>
       <p>Add a new link with a name and URL to the table! </p>
 
-      {/* Step 6: Pass a prop called linkData to your Table component from the LinkContainer component */}
       <Table linkData={favLinks} removeLink={removeLink} />
 
-      {/* Step 14: Render the Form component below the Table component */}
-      <Form handleSubmit={submitForm} />
+      <Form handleSubmit={handleSubmit} />
     </div>
   );
 }
